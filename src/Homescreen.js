@@ -1,266 +1,259 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  FlatList,
-  StyleSheet,
-  Alert,
-  TouchableOpacity,
-} from 'react-native';
-import Feather from 'react-native-vector-icons/Feather';
-import firestore from '@react-native-firebase/firestore';
-import auth from '@react-native-firebase/auth';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, TextInput, TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
+import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
+import Swiper from 'react-native-swiper';
+import { useNavigation } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigationContainer } from '@react-navigation/native';
+// const Tab = createBottomTabNavigator();
+// function Tabs() {
+//   return (
+//     <Tab.Navigator>
+// <Tab.Screen
+//   name="Home"
+//   component={HomeScreen}
+//   options={{
+//     tabBarIcon: ({ color, size }) => (
+//       <Icon name="home-outline" size={size} color={color} />
+//     ),
+//   }}
+// />
+
+//       <Tab.Screen name="Shop" component={HomeScreen} />
+//       <Tab.Screen name="profile" component={HomeScreen} />
+//       <Tab.Screen name="Favorites" component={HomeScreen} />
+//     </Tab.Navigator>
+//   );
+// }
+
+const categories = [
+  { name: 'Medical', icon: 'briefcase-medical', type: 'fontawesome5' },
+  { name: 'Heart', icon: 'heartbeat', type: 'fontawesome5' },
+  { name: 'Brain', icon: 'brain', type: 'fontawesome5' },
+  { name: 'Stomach', icon: 'utensils', type: 'fontawesome5' },
+  { name: 'Lungs', icon: 'lungs', type: 'fontawesome5' },
+];
 
 
-const HomeScreen = ({ navigation }) => {
-  const [data, setData] = useState([]);
-  const [itemName, setItemName] = useState('');
-  const [itemQuantity, setItemQuantity] = useState('');
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [currentId, setCurrentId] = useState(null);
-  const [userName, setUserName] = useState('');
-  const user = auth().currentUser;
 
-  const fetchData = async () => {
-    try {
-      const snapshot = await firestore().collection('items').get();
-      const itemsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setData(itemsList);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const createItem = async () => {
-    if (itemName && itemQuantity) {
-      try {
-        await firestore().collection('items').add({
-          name: itemName,
-          quantity: parseInt(itemQuantity),
-        });
-        fetchData();
-        setItemName('');
-        setItemQuantity('');
-      } catch (error) {
-        console.error(error);
-      }
-    } else {
-      Alert.alert('Validation', 'Please fill out all fields.');
-    }
-  };
-
-  const updateItem = async () => {
-    if (itemName && itemQuantity && currentId) {
-      try {
-        await firestore().collection('items').doc(currentId).update({
-          name: itemName,
-          quantity: parseInt(itemQuantity),
-        });
-        fetchData();
-        setItemName('');
-        setItemQuantity('');
-        setIsUpdating(false);
-        setCurrentId(null);
-      } catch (error) {
-        console.error(error);
-      }
-    } else {
-      Alert.alert('Validation', 'Please fill out all fields.');
-    }
-  };
-
-  const deleteItem = async id => {
-    try {
-      await firestore().collection('items').doc(id).delete();
-      fetchData();
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  // const handleLogout = () => {
-  //   auth()
-  //     .signOut()
-  //     .then(() => {
-  //       navigation.replace('Login');
-  //     });
-  // };
-
-  useEffect(() => {
-    const fetchUserName = async () => {
-      if (user) {
-        const doc = await firestore().collection('users').doc(user.uid).get();
-        if (doc.exists) {
-          setUserName(doc.data().name);
-        }
-      }
-    };
-
-    fetchData();
-    fetchUserName();
-  }, []);
-
+const HomeScreen = () => {
+  const navigation = useNavigation();
   return (
-    <View style={styles.container}>
-      {/* <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity> */}
-      <Text style={styles.welcome}>Welcome, {userName || 'User'}</Text>
-
-
-
-      <Text style={styles.header}>{isUpdating ? 'Update Item' : 'Create Item'}</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Item Name"
-          placeholderTextColor="black"
-        value={itemName}
-        onChangeText={setItemName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Item Quantity"
-        keyboardType="numeric"
-          placeholderTextColor="black"
-        value={itemQuantity}
-        onChangeText={setItemQuantity}
-      />
-
-      <TouchableOpacity
-        style={styles.actionButton}
-        onPress={isUpdating ? updateItem : createItem}>
-        <Text style={styles.actionButtonText}>
-          {isUpdating ? 'Update' : 'Create'}
-        </Text>
-      </TouchableOpacity>
-
-      <View style={styles.table}>
-        <View style={styles.tableHeader}>
-          <Text style={styles.tableHeaderText}>Item Name</Text>
-          <Text style={styles.tableHeaderText}>Quantity</Text>
-          <Text style={styles.tableHeaderText}>Actions</Text>
+    <View style={styles.wrapper}>
+      <ScrollView style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.logo}>Pharma<Text style={{ color: '#4f9df7' }}>Mate</Text></Text>
+          <Icon name="notifications-outline" size={24} color="#333" />
         </View>
 
-        <FlatList
-          data={data}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.tableRow}>
-              <Text style={styles.tableCell}>{item.name}</Text>
-              <Text style={styles.tableCell}>{item.quantity}</Text>
-              <View style={styles.tableActions}>
-                <TouchableOpacity
-                  onPress={() => {
-                    setItemName(item.name);
-                    setItemQuantity(item.quantity.toString());
-                    setCurrentId(item.id);
-                    setIsUpdating(true);
-                  }}>
-                  <FontAwesome name="edit" size={24} color="#f5a623" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => deleteItem(item.id)}>
-                  <Feather name="trash-2" size={20} color="red" />
-                </TouchableOpacity>
-              </View>
+        {/* Search */}
+        <View style={styles.searchBox}>
+          <Icon name="search-outline" size={20} color="#aaa" />
+          <TextInput placeholder="Search" style={styles.input} />
+        </View>
+
+        {/* Banner */}
+        <View style={styles.banner}>
+          <Swiper autoplay showsPagination={true} style={styles.swiper}>
+            <View style={styles.slide}>
+              <Image
+                source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2927/2927533.png' }}
+                style={styles.bannerImage}
+              />
             </View>
-          )}
-        />
+            <View style={styles.slide}>
+              <Image
+                source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2927/2927506.png' }}
+                style={styles.bannerImage}
+              />
+            </View>
+            <View style={styles.slide}>
+              <Image
+                source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2927/2927559.png' }}
+                style={styles.bannerImage}
+              />
+            </View>
+          </Swiper>
+        </View>
+
+        {/* Categories */}
+        <Text style={styles.sectionTitle}>Categories</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categories}>
+  {categories.map((cat, index) => (
+    <TouchableOpacity
+      key={index}
+      style={styles.categoryItem}
+      onPress={() => navigation.navigate('Care')}
+    >
+      <View style={styles.categoryIcon}>
+        {cat.type === 'fontawesome5' ? (
+          <FontAwesome5 name={cat.icon} size={24} color="#000" />
+        ) : (
+          <Icon name={cat.icon} size={24} color="#000" />
+        )}
       </View>
+      <Text style={styles.categoryText}>{cat.name}</Text>
+    </TouchableOpacity>
+  ))}
+</ScrollView>
+
+        {/* Popular */}
+        <Text style={styles.sectionTitle}>Popular</Text>
+        <View style={styles.popular}>
+          <View style={styles.productCard}>
+            <Image
+              source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2927/2927559.png' }}
+              style={{ width: 100, height: 100 }}
+            />
+            <Text style={styles.productTitle}>Baby diapers</Text>
+            <Text style={styles.productSubtitle}>Size - 2 (4-8 kg), 68 pcs</Text>
+          </View>
+          <View style={styles.productCard}>
+            <Image
+              source={{ uri: 'https://cdn-icons-png.flaticon.com/512/2927/2927559.png' }}
+              style={{ width: 100, height: 100 }}
+            />
+            <Text style={styles.productTitle}>Omega-3</Text>
+            <Text style={styles.productSubtitle}>30 softgels</Text>
+          </View>
+          
+        </View>
+     
+
+      {/* Bottom Navigation Bar */}
+      {/* <View style={styles.bottomNav}>
+        <TouchableOpacity>
+          <Icon name="home" size={24} color="#777" />
+        </TouchableOpacity>
+        <TouchableOpacity>
+          <Icon name="heart-outline" size={24} color="#777" />
+        </TouchableOpacity>
+        <TouchableOpacity>
+          <FontAwesome5 name="shopping-cart" size={22} color="#777" />
+        </TouchableOpacity>
+        <TouchableOpacity>
+          <Icon name="person-outline" size={24} color="#777" />
+        </TouchableOpacity>
+      </View> */}
+  
+
+      </ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  wrapper: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    padding: 20,
-    paddingTop: 40,
+    backgroundColor: '#e6f2ff',
   },
-  welcome: {
-    fontSize: 22,
-    marginBottom: 10,
-    color: '#1DC9b7',
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  // logoutButton: {
-  //   alignSelf: 'flex-end',
-  //   marginBottom: 10,
-  // },
-  logoutText: {
-    color: '#1DC9b7',
-    fontWeight: '600',
-    fontSize: 16,
+  container: {
+    padding: 10,
   },
   header: {
-    fontSize: 20,
-    marginBottom: 15,
-    color: '#1DC9b7',
-    fontWeight: '600',
-    textAlign: 'center',
+    marginTop: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  logo: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  searchBox: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 10,
+    alignItems: 'center',
+    marginVertical: 16,
   },
   input: {
-    height: 45,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    marginBottom: 12,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: '#fff',
-    fontSize: 16,
-    color:'#000'
+    marginLeft: 10,
+    flex: 1,
+    color: 'black',
   },
-  actionButton: {
-    backgroundColor: '#1DC9b7',
-    paddingVertical: 10,
-    borderRadius: 8,
+  banner: {
+    backgroundColor: '#cce5ff',
+    borderRadius: 12,
+    padding: 20,
+    flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
   },
-  actionButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+  swiper: {
+    height: 150,
+    borderRadius: 12,
   },
-  table: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+  slide: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
     overflow: 'hidden',
   },
-  tableHeader: {
+  bannerImage: {
+    width: '100%',
+    height: 150,
+    resizeMode: 'contain',
+    borderRadius: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  categories: {
     flexDirection: 'row',
-    backgroundColor: '#1DC9b7',
-    padding: 10,
+    marginBottom: 20,
+  },
+  categoryItem: {
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  categoryIcon: {
+    backgroundColor: '#fff',
+    borderRadius: 50,
+    padding: 12,
+  },
+  categoryText: {
+    marginTop: 5,
+    fontSize: 14,
+  },
+  popular: {
+    flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  tableHeaderText: {
-    color: '#fff',
+  productCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    width: '48%',
+  },
+  productTitle: {
     fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
+    marginTop: 8,
   },
-  tableRow: {
-    flexDirection: 'row',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderColor: '#ddd',
-    alignItems: 'center',
-    justifyContent:'center'
+  productSubtitle: {
+    color: '#777',
+    fontSize: 12,
   },
-  tableCell: {
-    flex: 1,
-    textAlign: 'center',
-  },
-  tableActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    width: 60,
-  },
+  // bottomNav: {
+  //   flexDirection: 'row',
+  //   height:70,
+  //   justifyContent: 'space-around',
+  //   paddingVertical: 12,
+  //   backgroundColor: '#fff',
+  //   borderTopLeftRadius: 20,
+  //   borderTopRightRadius: 20,
+  //   shadowColor: '#000',
+  //   shadowOpacity: 0.1,
+  //   shadowOffset: { width: 0, height: -6 },
+  //   elevation: 10,
+  //   marginTop:30,
+  // },
 });
 
 export default HomeScreen;
