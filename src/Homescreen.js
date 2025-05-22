@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TextInput, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
@@ -6,6 +6,10 @@ import Swiper from 'react-native-swiper';
 import { useNavigation } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
+import auth from '@react-native-firebase/auth';
+import { Alert } from 'react-native';
+// import { useState } from 'react';
+
 // const Tab = createBottomTabNavigator();
 // function Tabs() {
 //   return (
@@ -37,15 +41,61 @@ const categories = [
 
 
 
+// const handlelogout=()=>{
+//   auth()
+//   .signOut
+//   .then(()=>{
+//     navigation.replace('Login')
+//   })
+//   .catch(error=>{
+//     console.log('logout',error)
+//   })
+// }
+
 const HomeScreen = () => {
+  const [user, setUser] = useState(null);
   const navigation = useNavigation();
+
+const confirmLogout = () => {
+  Alert.alert(
+    'Logout',
+    'Are you sure you want to log out?',
+    [
+      {
+        text: 'Cancel',
+        onPress: () => {},
+        style: 'cancel',
+      },
+      {
+        text: 'Logout',
+        onPress: handlelogout,
+        style: 'destructive',
+      },
+    ],
+    { cancelable: true }
+  );
+};
+
+const handlelogout = async () => {
+    try {
+      await auth().signOut();
+      setUser(null);
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };  
   return (
     <View style={styles.wrapper}>
       <ScrollView style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.logo}>Pharma<Text style={{ color: '#4f9df7' }}>Mate</Text></Text>
-          <Icon name="notifications-outline" size={24} color="#333" />
+          <View style={{ flexDirection: 'row', alignItems: 'center'}}>
+          <Icon name="notifications-outline" size={24} color="#333" style={{marginRight:15}} />
+          <TouchableOpacity onPress={confirmLogout}>
+            <Icon name='log-out-outline' size={26} color='#333'/>
+          </TouchableOpacity>
+          </View>
         </View>
 
         {/* Search */}
@@ -148,6 +198,7 @@ const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
     backgroundColor: '#e6f2ff',
+    cursor:'pointer'
   },
   container: {
     padding: 10,
@@ -216,7 +267,7 @@ const styles = StyleSheet.create({
   categoryIcon: {
     backgroundColor: '#fff',
     borderRadius: 50,
-    padding: 12,
+    padding: 13,
   },
   categoryText: {
     marginTop: 5,
